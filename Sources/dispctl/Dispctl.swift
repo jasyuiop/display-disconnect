@@ -6,6 +6,7 @@ struct Dispctl: ParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "dispctl",
     abstract: "Harici ekranların görüntü bağlantısını yönetir.",
-    version: AppInfo.version
+    version: AppInfo.version,
+    subcommands: [ListCommand.self]
   )
 }
