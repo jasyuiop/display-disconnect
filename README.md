@@ -62,6 +62,10 @@ open .build/bundle/DisplayDisconnect.app
 
 Open `DisplayDisconnect.app`. A menu bar icon lists your displays, each with a **Disconnect** or **Connect** button. The list refreshes automatically when displays are plugged in or out. There is no Dock icon.
 
+<p align="center">
+  <img src="assets/menu.png" alt="The Display Disconnect menu listing the built-in display and an external display with a Disconnect button" width="608">
+</p>
+
 ### CLI
 
 ```sh
