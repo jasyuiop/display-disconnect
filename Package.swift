@@ -25,5 +25,6 @@ let package = Package(
     ),
     .testTarget(name: "DisplayCoreTests", dependencies: ["DisplayCore"]),
     .testTarget(name: "DisplayStorageTests", dependencies: ["DisplayStorage", "DisplayCore"]),
+    .testTarget(name: "DisplayBackendCGTests", dependencies: ["DisplayBackendCG", "DisplayCore"]),
   ]
 )

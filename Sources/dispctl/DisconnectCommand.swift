@@ -10,7 +10,9 @@ struct DisconnectCommand: ParsableCommand {
   var id: UInt32
 
   func run() throws {
-    try makeService().disconnect(id)
-    print("Ekran \(id) bağlantısı kesildi. Geri bağlamak için: dispctl connect \(id)")
+    try reportingErrors {
+      try makeService().disconnect(id)
+      print("Ekran \(id) bağlantısı kesildi. Geri bağlamak için: dispctl connect \(id)")
+    }
   }
 }

@@ -11,7 +11,9 @@ struct ListCommand: ParsableCommand {
   var json = false
 
   func run() throws {
-    let displays = try makeService().list()
-    print(json ? try DisplayListFormatter.json(displays) : DisplayListFormatter.text(displays))
+    try reportingErrors {
+      let displays = try makeService().list()
+      print(json ? try DisplayListFormatter.json(displays) : DisplayListFormatter.text(displays))
+    }
   }
 }

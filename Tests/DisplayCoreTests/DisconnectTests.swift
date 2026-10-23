@@ -63,6 +63,16 @@ import Testing
     #expect(store.state.records.isEmpty)
   }
 
+  @Test func unsupportedBackendKeepsErrorAndLeavesNoRecord() {
+    let backend = FakeBackend(
+      displays: [builtin, external], setEnabledFailure: DisplayError.unsupported("sembol yok"))
+    let store = FakeStore()
+    #expect(throws: DisplayError.unsupported("sembol yok")) {
+      try service(backend, store).disconnect(3)
+    }
+    #expect(store.state.records.isEmpty)
+  }
+
   @Test func saveFailureMeansDisplayIsNeverDisabled() {
     let backend = FakeBackend(displays: [builtin, external])
     let store = FakeStore()

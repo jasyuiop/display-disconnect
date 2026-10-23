@@ -24,4 +24,33 @@ public enum DisplayError: Error, Equatable, LocalizedError {
       "\(id) kimlikli ekranın UUID'si okunamadı; geri bağlanabilmesi garanti edilemediği için kesilmedi."
     }
   }
+
+  /// Hata kategorisine göre süreç çıkış kodu: 2 kural reddi, 3 desteklenmiyor, 4 durum dosyası,
+  /// 5 ekran işlemi başarısız. (1: beklenmeyen hata, 64: ArgumentParser kullanım hatası.)
+  public var exitCode: Int32 {
+    switch self {
+    case .unknownDisplay, .notDisconnected, .lastDisplay, .builtinNotAllowed, .missingUUID: 2
+    case .unsupported: 3
+    case .stateFailure: 4
+    case .backendFailure: 5
+    }
+  }
+
+  /// Kullanıcının bir sonraki adımı. Kural reddedilen hatalarda mesajın kendisi yeterli.
+  public var recoverySuggestion: String? {
+    switch self {
+    case .backendFailure:
+      "Ekranın durumu belirsiz olabilir: `dispctl list` ile bakın. Kesik kalan ekranı "
+        + "`dispctl connect <id>`, olmazsa `dispctl experimental enable <id>` ile açın. "
+        + "Kabloyu çekip takmak kesik ekranı geri getirmez."
+    case .stateFailure:
+      "Durum dosyası bozuksa yedeğini alıp silin (kesik ekranların kaydı kaybolur). "
+        + "Kesik kalan ekranı `dispctl experimental enable <id>` ile açın."
+    case .unsupported:
+      "Bu özellik macOS'un private API'sine dayanır ve bu sürümde çalışmıyor olabilir. "
+        + "`dispctl list` ile ekranların durumuna bakın."
+    case .unknownDisplay, .notDisconnected, .lastDisplay, .builtinNotAllowed, .missingUUID:
+      nil
+    }
+  }
 }

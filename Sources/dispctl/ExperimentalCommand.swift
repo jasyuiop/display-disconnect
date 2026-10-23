@@ -27,15 +27,17 @@ struct ExperimentalCommand: ParsableCommand {
     }
 
     func run() throws {
-      let service = makeService()
-      try service.disable(id)
-      print("Ekran \(id) devre dışı bırakıldı.")
-      guard let revertAfter else { return }
-      print("\(revertAfter) sn sonra geri açılacak; süreç açık kalacak.")
-      fflush(stdout)
-      Thread.sleep(forTimeInterval: TimeInterval(revertAfter))
-      try service.enable(id)
-      print("Ekran \(id) geri açıldı.")
+      try reportingErrors {
+        let service = makeService()
+        try service.disable(id)
+        print("Ekran \(id) devre dışı bırakıldı.")
+        guard let revertAfter else { return }
+        print("\(revertAfter) sn sonra geri açılacak; süreç açık kalacak.")
+        fflush(stdout)
+        Thread.sleep(forTimeInterval: TimeInterval(revertAfter))
+        try service.enable(id)
+        print("Ekran \(id) geri açıldı.")
+      }
     }
   }
 
@@ -47,8 +49,10 @@ struct ExperimentalCommand: ParsableCommand {
     var id: UInt32
 
     func run() throws {
-      try makeService().enable(id)
-      print("Ekran \(id) geri açıldı.")
+      try reportingErrors {
+        try makeService().enable(id)
+        print("Ekran \(id) geri açıldı.")
+      }
     }
   }
 
@@ -57,13 +61,15 @@ struct ExperimentalCommand: ParsableCommand {
       abstract: "Çevrimiçi listeyi ve private CGSGetDisplayList çıktısını yan yana yazar.")
 
     func run() throws {
-      let backend = CGDisplayBackend()
-      let online = try backend.onlineDisplays().map(\.id).sorted()
-      print("çevrimiçi (public): \(online)")
-      do {
-        print("CGSGetDisplayList (private): \(try backend.privateDisplayIDs().sorted())")
-      } catch {
-        print("CGSGetDisplayList (private): \(error.localizedDescription)")
+      try reportingErrors {
+        let backend = CGDisplayBackend()
+        let online = try backend.onlineDisplays().map(\.id).sorted()
+        print("çevrimiçi (public): \(online)")
+        do {
+          print("CGSGetDisplayList (private): \(try backend.privateDisplayIDs().sorted())")
+        } catch {
+          print("CGSGetDisplayList (private): \(error.localizedDescription)")
+        }
       }
     }
   }

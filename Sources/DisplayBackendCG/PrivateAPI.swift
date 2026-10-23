@@ -22,7 +22,7 @@ enum PrivateAPI {
     try symbol("CGSGetDisplayList", as: GetDisplayList.self)
   }
 
-  private static func symbol<T>(_ name: String, as type: T.Type) throws -> T {
+  static func symbol<T>(_ name: String, as type: T.Type) throws -> T {
     let rtldDefault = UnsafeMutableRawPointer(bitPattern: -2)
     guard let address = dlsym(rtldDefault, name) else {
       throw DisplayError.unsupported("\(name) sembolü bu macOS sürümünde bulunamadı")
