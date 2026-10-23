@@ -4,30 +4,22 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-# /kickoff bu iki satırı kaldırır. Yapılandırılmamış bir kapı asla "yeşil" görünmemeli.
-echo "scripts/check.sh henüz yapılandırılmadı" >&2
-exit 1
-
 step() { printf '\n==> %s\n' "$*"; }
 
 step "Format"
-# Python: ruff format --check .
-# Rust:   cargo fmt --check
-# Node:   npx prettier --check .
+swift format lint --strict --recursive Sources Tests Package.swift
 
-step "Lint"
-# Python: ruff check .
-# Rust:   cargo clippy --all-targets -- -D warnings
-# Node:   npx eslint .
+step "Katman kuralı (DisplayCore, CoreGraphics import edemez)"
+if grep -rnE "import (CoreGraphics|AppKit|SwiftUI)" Sources/DisplayCore; then
+  echo "DisplayCore platform çerçevesi import ediyor." >&2
+  exit 1
+fi
 
-step "Tip kontrolü"
-# Python: mypy src
-# Node:   npx tsc --noEmit
+step "Derleme (uyarılar hata)"
+swift build -Xswiftc -warnings-as-errors
 
 step "Test"
-# Python: pytest -q
-# Rust:   cargo test
-# Node:   npm test
+swift test
 
 step "Yer tutucu kontrolü"
 if grep -rn "{{" CLAUDE.md docs/ >/dev/null 2>&1; then
