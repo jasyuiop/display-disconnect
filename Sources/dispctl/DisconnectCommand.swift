@@ -11,6 +11,6 @@ struct DisconnectCommand: ParsableCommand {
 
   func run() throws {
     try makeService().disconnect(id)
-    print("Ekran \(id) bağlantısı kesildi. Geri bağlamak için: dispctl experimental enable \(id)")
+    print("Ekran \(id) bağlantısı kesildi. Geri bağlamak için: dispctl connect \(id)")
   }
 }

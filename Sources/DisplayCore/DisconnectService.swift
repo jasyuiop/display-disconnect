@@ -4,15 +4,21 @@ public struct DisconnectService: Sendable {
   private let backend: any DisplayBackend
   private let store: any StateStore
   private let now: @Sendable () -> Date
+  private let sleep: @Sendable (TimeInterval) -> Void
+
+  private static let verifyAttempts = 10
+  private static let verifyInterval: TimeInterval = 0.5
 
   public init(
     backend: any DisplayBackend,
     store: any StateStore,
-    now: @escaping @Sendable () -> Date = { Date() }
+    now: @escaping @Sendable () -> Date = { Date() },
+    sleep: @escaping @Sendable (TimeInterval) -> Void = { Thread.sleep(forTimeInterval: $0) }
   ) {
     self.backend = backend
     self.store = store
     self.now = now
+    self.sleep = sleep
   }
 
   /// Çevrimiçi ekranlar ile kayıtlı ama çevrimiçi olmayan (kesilmiş) ekranlar. Salt okunur.
@@ -51,6 +57,37 @@ public struct DisconnectService: Sendable {
     }
   }
 
+  /// Kesilmiş ekranı geri bağlar: kaydı UUID ile çözer, ekranın gerçekten döndüğünü doğrular,
+  /// konum kayıttan farklıysa düzeltir ve kaydı siler. Ekran dönmezse kayıt korunur.
+  @discardableResult
+  public func connect(_ id: UInt32) throws -> ConnectResult {
+    let state = try loadState()
+    guard let recorded = state.records.first(where: { $0.display.id == id })?.display else {
+      throw DisplayError.notDisconnected(id)
+    }
+
+    if try onlineDisplay(uuid: recorded.uuid) != nil {
+      try saveState(state, removing: recorded.uuid, afterConnect: false)
+      return ConnectResult(alreadyConnected: true)
+    }
+
+    try call { try backend.setEnabled(id: currentID(of: recorded), enabled: true) }
+    guard let appeared = try waitForDisplay(uuid: recorded.uuid) else {
+      throw DisplayError.backendFailure(
+        "Geri bağlama komutu verildi ama ekran birkaç saniye içinde görünmedi; kayıt korundu. "
+          + "`dispctl list` ile bakın.")
+    }
+
+    var result = ConnectResult()
+    if appeared.x != recorded.x || appeared.y != recorded.y {
+      try call { try backend.setOrigin(id: appeared.id, x: recorded.x, y: recorded.y) }
+      result.originRestored = true
+    }
+    result.sizeDiffers = appeared.width != recorded.width || appeared.height != recorded.height
+    try saveState(state, removing: recorded.uuid, afterConnect: true)
+    return result
+  }
+
   /// Deneysel, durumsuz kesme (`dispctl experimental disable`). Aynı güvenlik denetimleri.
   public func disable(_ id: UInt32) throws {
     _ = try validatedTarget(id)
@@ -70,6 +107,40 @@ public struct DisconnectService: Sendable {
     guard online.count > 1 else { throw DisplayError.lastDisplay }
     guard !target.isBuiltin else { throw DisplayError.builtinNotAllowed }
     return target
+  }
+
+  /// Kayıttaki UUID'nin şu anki kimliği. Private liste yoksa kayıtlı kimlikle devam edilir;
+  /// asıl işlem (`setEnabled`) kendi hatasını bildirir. UUID eşleşmeyen kimliklere dokunulmaz.
+  private func currentID(of recorded: DisplayInfo) -> UInt32 {
+    guard !recorded.uuid.isEmpty, let known = try? backend.knownDisplays() else {
+      return recorded.id
+    }
+    return known.first { $0.uuid == recorded.uuid }?.id ?? recorded.id
+  }
+
+  private func onlineDisplay(uuid: String) throws -> DisplayInfo? {
+    guard !uuid.isEmpty else { return nil }
+    return try onlineDisplays().first { $0.uuid == uuid }
+  }
+
+  private func waitForDisplay(uuid: String) throws -> DisplayInfo? {
+    for attempt in 0..<Self.verifyAttempts {
+      if let display = try onlineDisplay(uuid: uuid) { return display }
+      if attempt < Self.verifyAttempts - 1 { sleep(Self.verifyInterval) }
+    }
+    return nil
+  }
+
+  private func saveState(
+    _ state: DisconnectState, removing uuid: String, afterConnect: Bool
+  ) throws {
+    var updated = state
+    updated.records.removeAll { $0.display.uuid == uuid }
+    do {
+      try saveState(updated)
+    } catch DisplayError.stateFailure(let reason) where afterConnect {
+      throw DisplayError.stateFailure("ekran geri bağlandı ama kayıt temizlenemedi: \(reason)")
+    }
   }
 
   private func onlineDisplays() throws -> [DisplayInfo] {

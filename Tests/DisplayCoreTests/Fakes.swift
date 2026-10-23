@@ -10,20 +10,60 @@ final class CallRecorder: @unchecked Sendable {
   func record(_ call: String) { lock.withLock { storage.append(call) } }
 }
 
+final class OnlineBox: @unchecked Sendable {
+  private let lock = NSLock()
+  private var displays: [DisplayInfo]
+
+  init(_ displays: [DisplayInfo]) { self.displays = displays }
+
+  var current: [DisplayInfo] { lock.withLock { displays } }
+  func append(_ new: [DisplayInfo]) { lock.withLock { displays += new } }
+}
+
 struct FakeBackend: DisplayBackend {
-  var displays: [DisplayInfo] = []
   var failure: (any Error)?
   var setEnabledFailure: (any Error)?
+  var known: [KnownDisplay]
+  var knownFailure: (any Error)?
+  /// `setEnabled(id, true)` çağrılınca çevrimiçi olacak ekranlar (kimlikleri eşleşirse).
+  var appearsOnEnable: [DisplayInfo]
   let recorder = CallRecorder()
+  private let online: OnlineBox
+
+  init(
+    displays: [DisplayInfo] = [],
+    failure: (any Error)? = nil,
+    setEnabledFailure: (any Error)? = nil,
+    appearsOnEnable: [DisplayInfo] = [],
+    known: [KnownDisplay] = [],
+    knownFailure: (any Error)? = nil
+  ) {
+    online = OnlineBox(displays)
+    self.failure = failure
+    self.setEnabledFailure = setEnabledFailure
+    self.appearsOnEnable = appearsOnEnable
+    self.known = known
+    self.knownFailure = knownFailure
+  }
 
   func onlineDisplays() throws -> [DisplayInfo] {
     if let failure { throw failure }
-    return displays
+    return online.current
   }
 
   func setEnabled(id: UInt32, enabled: Bool) throws {
     if let setEnabledFailure { throw setEnabledFailure }
     recorder.record("setEnabled(\(id), \(enabled))")
+    if enabled { online.append(appearsOnEnable.filter { $0.id == id }) }
+  }
+
+  func knownDisplays() throws -> [KnownDisplay] {
+    if let knownFailure { throw knownFailure }
+    return known
+  }
+
+  func setOrigin(id: UInt32, x: Int, y: Int) throws {
+    recorder.record("setOrigin(\(id), \(x), \(y))")
   }
 }
 
@@ -55,7 +95,7 @@ let fixedDate = Date(timeIntervalSince1970: 1_700_000_000)
 extension DisconnectService {
   /// Durumla ilgilenmeyen testler için boş, bellek içi depo.
   init(backend: any DisplayBackend) {
-    self.init(backend: backend, store: FakeStore(), now: { fixedDate })
+    self.init(backend: backend, store: FakeStore(), now: { fixedDate }, sleep: { _ in })
   }
 }
 
@@ -66,10 +106,14 @@ extension DisplayInfo {
     name: String = "Display",
     isBuiltin: Bool = false,
     isMain: Bool = false,
-    state: DisplayState = .connected
+    state: DisplayState = .connected,
+    x: Int = 0,
+    y: Int = 0,
+    width: Int = 1920,
+    height: Int = 1080
   ) -> DisplayInfo {
     DisplayInfo(
       id: id, uuid: uuid ?? "UUID-\(id)", name: name, isBuiltin: isBuiltin, isMain: isMain,
-      x: 0, y: 0, width: 1920, height: 1080, state: state)
+      x: x, y: y, width: width, height: height, state: state)
   }
 }

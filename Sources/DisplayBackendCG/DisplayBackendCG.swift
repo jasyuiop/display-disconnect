@@ -45,6 +45,25 @@ public struct CGDisplayBackend: DisplayBackend {
     guard result == .success else { throw Self.failure(result, "CGCompleteDisplayConfiguration") }
   }
 
+  public func knownDisplays() throws -> [KnownDisplay] {
+    try privateDisplayIDs().map { KnownDisplay(id: $0, uuid: Self.uuid(of: $0)) }
+  }
+
+  public func setOrigin(id: UInt32, x: Int, y: Int) throws {
+    var config: CGDisplayConfigRef?
+    var result = CGBeginDisplayConfiguration(&config)
+    guard result == .success else { throw Self.failure(result, "CGBeginDisplayConfiguration") }
+
+    result = CGConfigureDisplayOrigin(config, id, Int32(clamping: x), Int32(clamping: y))
+    guard result == .success else {
+      CGCancelDisplayConfiguration(config)
+      throw Self.failure(result, "CGConfigureDisplayOrigin")
+    }
+
+    result = CGCompleteDisplayConfiguration(config, .forSession)
+    guard result == .success else { throw Self.failure(result, "CGCompleteDisplayConfiguration") }
+  }
+
   /// Deneysel (S3, S4): private `CGSGetDisplayList`'in döndürdüğü kimlikler. Kesilmiş ekranı da
   /// içerip içermediğini gözlemlemek için; üretim yolunda kullanılmaz.
   public func privateDisplayIDs() throws -> [UInt32] {
