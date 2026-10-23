@@ -6,20 +6,72 @@ import Observation
 
 @MainActor @Observable
 final class DisplaysModel {
-  private(set) var rows: [DisplayRow] = []
-  private(set) var errorMessage: String?
+  private var state = MenuState()
+  var rows: [DisplayRow] { state.rows }
+  var errorMessage: String? { state.errorMessage }
+  var busyID: UInt32? { state.busyID }
 
   private let service = DisconnectService(
     backend: CGDisplayBackend(),
     store: FileStateStore(url: FileStateStore.defaultURL))
+  private var observer: DisplayChangeObserver?
+  private var pendingRefresh: Task<Void, Never>?
+
+  init() {
+    observer = DisplayChangeObserver { [weak self] in
+      Task { @MainActor in self?.scheduleRefresh() }
+    }
+  }
 
   func refresh() {
     do {
-      rows = DisplayMenuPresenter.rows(try service.list())
-      errorMessage = nil
+      state.listLoaded(try service.list())
     } catch {
-      rows = []
-      errorMessage = (error as? LocalizedError)?.errorDescription ?? String(describing: error)
+      state.listFailed(Self.message(for: error))
     }
+  }
+
+  /// Kullanıcının "Yenile" düğmesi: görülmüş olabilecek eylem hatasını da kapatır.
+  func reload() {
+    state.dismissActionError()
+    refresh()
+  }
+
+  func perform(_ action: RowAction, on id: UInt32) {
+    guard state.beginAction(on: id) else { return }
+    let service = service
+    Task {
+      // Arka planda: `connect` ekranın dönmesini birkaç saniyeye kadar bekleyebilir.
+      let failure = await Task.detached(priority: .userInitiated) { () -> String? in
+        do {
+          switch action {
+          case .disconnect: try service.disconnect(id)
+          case .connect: try service.connect(id)
+          }
+          return nil
+        } catch {
+          return Self.message(for: error)
+        }
+      }.value
+      state.finishAction(failure: failure)
+      refresh()
+    }
+  }
+
+  /// Sistem ekran değişikliklerini art arda bildirir; kısa bir bekleyişle tek yenilemeye indirilir.
+  private func scheduleRefresh() {
+    pendingRefresh?.cancel()
+    pendingRefresh = Task {
+      try? await Task.sleep(for: .milliseconds(400))
+      guard !Task.isCancelled else { return }
+      refresh()
+    }
+  }
+
+  nonisolated private static func message(for error: any Error) -> String {
+    guard let localized = error as? any LocalizedError else { return String(describing: error) }
+    return [localized.errorDescription, localized.recoverySuggestion]
+      .compactMap { $0 }
+      .joined(separator: "\n")
   }
 }

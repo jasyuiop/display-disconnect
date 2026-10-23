@@ -35,4 +35,32 @@ import Testing
   @Test func emptyInputGivesNoRows() {
     #expect(DisplayMenuPresenter.rows([]).isEmpty)
   }
+
+  @Test func connectedExternalWithAnotherConnectedDisplayOffersDisconnect() {
+    let rows = DisplayMenuPresenter.rows([
+      .stub(id: 1, isBuiltin: true, isMain: true), .stub(id: 3),
+    ])
+    #expect(rows.map(\.action) == [nil, .disconnect])
+  }
+
+  @Test func builtinOffersNoAction() {
+    let rows = DisplayMenuPresenter.rows([.stub(id: 1, isBuiltin: true), .stub(id: 3)])
+    #expect(rows[0].action == nil)
+  }
+
+  @Test func lastConnectedDisplayOffersNoAction() {
+    #expect(DisplayMenuPresenter.rows([.stub(id: 3)])[0].action == nil)
+  }
+
+  @Test func disconnectedDisplaysDoNotCountAsConnected() {
+    let rows = DisplayMenuPresenter.rows([.stub(id: 3), .stub(id: 5, state: .disconnected)])
+    #expect(rows.map(\.action) == [nil, .connect])
+  }
+
+  @Test func disconnectedDisplayOffersConnect() {
+    let rows = DisplayMenuPresenter.rows([
+      .stub(id: 1, isBuiltin: true), .stub(id: 3, state: .disconnected),
+    ])
+    #expect(rows[1].action == .connect)
+  }
 }

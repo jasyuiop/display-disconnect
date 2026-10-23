@@ -86,18 +86,24 @@ public struct CGDisplayBackend: DisplayBackend {
     return CFUUIDCreateString(nil, uuid) as String
   }
 
-  /// NSScreen yalnızca ana iş parçacığında okunur; değilse ad bulunamaz ve yedek ad kullanılır.
+  /// NSScreen yalnızca ana iş parçacığında okunur. Başka iş parçacığından çağrılırsa ana iş
+  /// parçacığına geçilir; bu yüzden ana iş parçacığı çağıranı bekleyerek bloke olmamalıdır.
   private static func screenNames() -> [CGDirectDisplayID: String] {
-    guard Thread.isMainThread else { return [:] }
-    return MainActor.assumeIsolated {
-      var names: [CGDirectDisplayID: String] = [:]
-      for screen in NSScreen.screens {
-        let key = NSDeviceDescriptionKey("NSScreenNumber")
-        if let number = screen.deviceDescription[key] as? NSNumber {
-          names[number.uint32Value] = screen.localizedName
-        }
-      }
-      return names
+    if Thread.isMainThread {
+      return MainActor.assumeIsolated { readScreenNames() }
     }
+    return DispatchQueue.main.sync { MainActor.assumeIsolated { readScreenNames() } }
+  }
+
+  @MainActor
+  private static func readScreenNames() -> [CGDirectDisplayID: String] {
+    var names: [CGDirectDisplayID: String] = [:]
+    for screen in NSScreen.screens {
+      let key = NSDeviceDescriptionKey("NSScreenNumber")
+      if let number = screen.deviceDescription[key] as? NSNumber {
+        names[number.uint32Value] = screen.localizedName
+      }
+    }
+    return names
   }
 }
