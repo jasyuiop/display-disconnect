@@ -7,6 +7,6 @@ struct Dispctl: ParsableCommand {
     commandName: "dispctl",
     abstract: "Harici ekranların görüntü bağlantısını yönetir.",
     version: AppInfo.version,
-    subcommands: [ListCommand.self]
+    subcommands: [ListCommand.self, ExperimentalCommand.self]
   )
 }

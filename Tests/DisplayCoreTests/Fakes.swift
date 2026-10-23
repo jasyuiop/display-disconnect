@@ -1,12 +1,29 @@
+import Foundation
+
 @testable import DisplayCore
+
+final class CallRecorder: @unchecked Sendable {
+  private let lock = NSLock()
+  private var storage: [String] = []
+
+  var calls: [String] { lock.withLock { storage } }
+  func record(_ call: String) { lock.withLock { storage.append(call) } }
+}
 
 struct FakeBackend: DisplayBackend {
   var displays: [DisplayInfo] = []
   var failure: (any Error)?
+  var setEnabledFailure: (any Error)?
+  let recorder = CallRecorder()
 
   func onlineDisplays() throws -> [DisplayInfo] {
     if let failure { throw failure }
     return displays
+  }
+
+  func setEnabled(id: UInt32, enabled: Bool) throws {
+    if let setEnabledFailure { throw setEnabledFailure }
+    recorder.record("setEnabled(\(id), \(enabled))")
   }
 }
 

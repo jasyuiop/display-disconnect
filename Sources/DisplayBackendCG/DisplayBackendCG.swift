@@ -29,8 +29,37 @@ public struct CGDisplayBackend: DisplayBackend {
     }
   }
 
-  private static func failure(_ error: CGError) -> DisplayError {
-    .backendFailure("CGGetOnlineDisplayList hata kodu \(error.rawValue)")
+  public func setEnabled(id: UInt32, enabled: Bool) throws {
+    let configure = try PrivateAPI.configureDisplayEnabled()
+    var config: CGDisplayConfigRef?
+    var result = CGBeginDisplayConfiguration(&config)
+    guard result == .success else { throw Self.failure(result, "CGBeginDisplayConfiguration") }
+
+    result = configure(config, id, enabled)
+    guard result == .success else {
+      CGCancelDisplayConfiguration(config)
+      throw Self.failure(result, "CGSConfigureDisplayEnabled")
+    }
+
+    result = CGCompleteDisplayConfiguration(config, .forSession)
+    guard result == .success else { throw Self.failure(result, "CGCompleteDisplayConfiguration") }
+  }
+
+  /// Deneysel (S3, S4): private `CGSGetDisplayList`'in döndürdüğü kimlikler. Kesilmiş ekranı da
+  /// içerip içermediğini gözlemlemek için; üretim yolunda kullanılmaz.
+  public func privateDisplayIDs() throws -> [UInt32] {
+    let list = try PrivateAPI.getDisplayList()
+    var ids = [CGDirectDisplayID](repeating: 0, count: 32)
+    var count: UInt32 = 0
+    let result = list(UInt32(ids.count), &ids, &count)
+    guard result == .success else { throw Self.failure(result, "CGSGetDisplayList") }
+    return Array(ids.prefix(min(Int(count), ids.count)))
+  }
+
+  private static func failure(_ error: CGError, _ call: String = "CGGetOnlineDisplayList")
+    -> DisplayError
+  {
+    .backendFailure("\(call) hata kodu \(error.rawValue)")
   }
 
   private static func uuid(of id: CGDirectDisplayID) -> String {
