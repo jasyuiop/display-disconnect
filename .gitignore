@@ -1,2 +1,7 @@
 .devbox/
 .build/
+
+# Internal development files (not published)
+CLAUDE.md
+docs/
+.claude/
