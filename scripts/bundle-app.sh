@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# DisplayDisconnect.app paketini oluşturur (LSUIElement: Dock ikonu yok, ad-hoc imzalı).
-# Kullanım: scripts/bundle-app.sh [--out DİZİN] [--configuration debug|release]
-# Çıktı yolu stdout'a yazılır; varsayılan: .build/bundle/DisplayDisconnect.app
+# Builds DisplayDisconnect.app (LSUIElement: no Dock icon; ad-hoc signed).
+# Usage: scripts/bundle-app.sh [--out DIR] [--configuration debug|release]
+# The bundle path is printed to stdout; default: .build/bundle/DisplayDisconnect.app
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -9,26 +9,26 @@ out=".build/bundle"
 configuration="debug"
 while [ $# -gt 0 ]; do
   case "$1" in
-    --out) out="${2:?--out bir dizin ister}"; shift 2 ;;
-    --configuration) configuration="${2:?--configuration bir değer ister}"; shift 2 ;;
-    *) echo "Bilinmeyen argüman: $1" >&2; exit 64 ;;
+    --out) out="${2:?--out needs a directory}"; shift 2 ;;
+    --configuration) configuration="${2:?--configuration needs a value}"; shift 2 ;;
+    *) echo "Unknown argument: $1" >&2; exit 64 ;;
   esac
 done
 case "$configuration" in
   debug | release) ;;
-  *) echo "--configuration debug veya release olmalı: $configuration" >&2; exit 64 ;;
+  *) echo "--configuration must be debug or release: $configuration" >&2; exit 64 ;;
 esac
 
 version="$(sed -n 's/.*static let version = "\(.*\)".*/\1/p' Sources/DisplayCore/AppInfo.swift)"
 if [ -z "$version" ]; then
-  echo "Sürüm Sources/DisplayCore/AppInfo.swift içinden okunamadı." >&2
+  echo "Could not read the version from Sources/DisplayCore/AppInfo.swift." >&2
   exit 1
 fi
 
 swift build -c "$configuration" --product DisplayDisconnectApp >&2
 binary="$(swift build -c "$configuration" --show-bin-path)/DisplayDisconnectApp"
 if [ ! -x "$binary" ]; then
-  echo "Derlenmiş uygulama bulunamadı: $binary" >&2
+  echo "Built app not found: $binary" >&2
   exit 1
 fi
 

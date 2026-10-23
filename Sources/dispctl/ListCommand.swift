@@ -4,10 +4,10 @@ import DisplayCore
 struct ListCommand: ParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "list",
-    abstract: "Bağlı ekranları listeler."
+    abstract: "List connected displays, and displays this tool has disconnected."
   )
 
-  @Flag(help: "Çıktıyı JSON olarak yazar.")
+  @Flag(help: "Print the output as JSON.")
   var json = false
 
   func run() throws {

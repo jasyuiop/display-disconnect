@@ -3,23 +3,26 @@ import ArgumentParser
 struct ConnectCommand: ParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "connect",
-    abstract: "Kesilmiş ekranı geri bağlar ve eski düzenine döndürür."
+    abstract: "Reconnect a disconnected display and restore its layout."
   )
 
-  @Argument(help: "`dispctl list` çıktısında `disconnected` görünen ekran kimliği.")
+  @Argument(help: "ID of a display shown as `disconnected` by `dispctl list`.")
   var id: UInt32
 
   func run() throws {
     try reportingErrors {
       let result = try makeService().connect(id)
       if result.alreadyConnected {
-        print("Ekran \(id) zaten bağlıydı; eski kayıt temizlendi.")
+        print("Display \(id) was already connected; the stale record was cleared.")
         return
       }
-      print("Ekran \(id) geri bağlandı.")
-      if result.originRestored { print("Konumu kayıtlı düzene göre düzeltildi.") }
+      print("Display \(id) reconnected.")
+      if result.originRestored {
+        print("Its position was corrected to match the recorded layout.")
+      }
       if result.sizeDiffers {
-        print("Uyarı: boyutu kayıttakinden farklı; değiştirilmedi. `dispctl list` ile bakın.")
+        print("Warning: its size differs from the record and was left unchanged.")
+        print("See `dispctl list`.")
       }
     }
   }

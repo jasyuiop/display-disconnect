@@ -1,4 +1,4 @@
-/// Kesik olanlar dahil, sistemin bildiği bir ekran: kimlik ve UUID.
+/// A display known to the system, including disconnected ones: its ID and UUID.
 public struct KnownDisplay: Equatable, Sendable {
   public var id: UInt32
   public var uuid: String
@@ -10,16 +10,17 @@ public struct KnownDisplay: Equatable, Sendable {
 }
 
 public protocol DisplayBackend: Sendable {
-  /// Sistemde şu an çevrimiçi olan ekranlar. Sıra garanti edilmez.
+  /// Displays that are online right now. The order is not guaranteed.
   func onlineDisplays() throws -> [DisplayInfo]
 
-  /// Ekranı layout'tan çıkarır (`enabled == false`) veya geri ekler. Güvenlik denetimi yapmaz;
-  /// bu `DisconnectService`'in işidir.
+  /// Removes the display from the layout (`enabled == false`) or adds it back. Performs no safety
+  /// checks; that is `DisconnectService`'s job.
   func setEnabled(id: UInt32, enabled: Bool) throws
 
-  /// Kesik ekranlar dahil bilinen tüm ekranlar (private API). Kullanılamıyorsa hata fırlatır.
+  /// All displays the system knows about, disconnected ones included (private API). Throws if
+  /// unavailable.
   func knownDisplays() throws -> [KnownDisplay]
 
-  /// Çevrimiçi bir ekranın layout konumunu ayarlar.
+  /// Sets the layout position of an online display.
   func setOrigin(id: UInt32, x: Int, y: Int) throws
 }

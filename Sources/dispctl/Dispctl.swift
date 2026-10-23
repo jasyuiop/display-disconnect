@@ -5,7 +5,7 @@ import DisplayCore
 struct Dispctl: ParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "dispctl",
-    abstract: "Harici ekranların görüntü bağlantısını yönetir.",
+    abstract: "Disconnect and reconnect the video signal of external displays.",
     version: AppInfo.version,
     subcommands: [
       ListCommand.self, DisconnectCommand.self, ConnectCommand.self, ExperimentalCommand.self,

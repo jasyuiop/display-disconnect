@@ -17,14 +17,14 @@ import Testing
 
   @Test func subtitleMarksMainAndBuiltin() {
     let row = DisplayMenuPresenter.rows([.stub(id: 1, isBuiltin: true, isMain: true)])[0]
-    #expect(row.subtitle.contains("ana ekran"))
-    #expect(row.subtitle.contains("dahili"))
+    #expect(row.subtitle.contains("main display"))
+    #expect(row.subtitle.contains("built-in"))
   }
 
   @Test func disconnectedRowSaysSo() {
     let row = DisplayMenuPresenter.rows([.stub(id: 3, state: .disconnected)])[0]
     #expect(row.isDisconnected)
-    #expect(row.subtitle.contains("bağlantısı kesik"))
+    #expect(row.subtitle.contains("disconnected"))
   }
 
   @Test func rowsKeepInputOrder() {

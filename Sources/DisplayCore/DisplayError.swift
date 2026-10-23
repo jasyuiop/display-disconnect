@@ -12,21 +12,25 @@ public enum DisplayError: Error, Equatable, LocalizedError {
 
   public var errorDescription: String? {
     switch self {
-    case .unsupported(let reason): "Bu sistemde desteklenmiyor: \(reason)"
-    case .backendFailure(let reason): "Ekran işlemi başarısız: \(reason)"
-    case .stateFailure(let reason): "Durum dosyası hatası: \(reason)"
-    case .unknownDisplay(let id): "\(id) kimlikli bağlı ekran yok. `dispctl list` ile bakın."
+    case .unsupported(let reason): "Not supported on this system: \(reason)"
+    case .backendFailure(let reason): "Display operation failed: \(reason)"
+    case .stateFailure(let reason): "State file error: \(reason)"
+    case .unknownDisplay(let id):
+      "No connected display with ID \(id). Run `dispctl list` to see the available IDs."
     case .notDisconnected(let id):
-      "\(id) kimlikli kesilmiş ekran kaydı yok. `dispctl list` ile `disconnected` olanlara bakın."
-    case .lastDisplay: "Son aktif ekran kesilemez."
-    case .builtinNotAllowed: "Dahili ekran kesilemez; yalnızca harici ekranlar desteklenir."
+      "No disconnected display recorded with ID \(id). Run `dispctl list` and look for "
+        + "`disconnected` entries."
+    case .lastDisplay: "The last active display cannot be disconnected."
+    case .builtinNotAllowed:
+      "The built-in display cannot be disconnected; only external displays are supported."
     case .missingUUID(let id):
-      "\(id) kimlikli ekranın UUID'si okunamadı; geri bağlanabilmesi garanti edilemediği için kesilmedi."
+      "The UUID of display \(id) could not be read. It was not disconnected because "
+        + "reconnecting it could not be guaranteed."
     }
   }
 
-  /// Hata kategorisine göre süreç çıkış kodu: 2 kural reddi, 3 desteklenmiyor, 4 durum dosyası,
-  /// 5 ekran işlemi başarısız. (1: beklenmeyen hata, 64: ArgumentParser kullanım hatası.)
+  /// Process exit code by error category: 2 rule refusal, 3 unsupported, 4 state file,
+  /// 5 display operation failed. (1: unexpected error, 64: ArgumentParser usage error.)
   public var exitCode: Int32 {
     switch self {
     case .unknownDisplay, .notDisconnected, .lastDisplay, .builtinNotAllowed, .missingUUID: 2
@@ -36,19 +40,20 @@ public enum DisplayError: Error, Equatable, LocalizedError {
     }
   }
 
-  /// Kullanıcının bir sonraki adımı. Kural reddedilen hatalarda mesajın kendisi yeterli.
+  /// What the user can do next. For refusals the message itself is enough.
   public var recoverySuggestion: String? {
     switch self {
     case .backendFailure:
-      "Ekranın durumu belirsiz olabilir: `dispctl list` ile bakın. Kesik kalan ekranı "
-        + "`dispctl connect <id>`, olmazsa `dispctl experimental enable <id>` ile açın. "
-        + "Kabloyu çekip takmak kesik ekranı geri getirmez."
+      "The display state may be uncertain: check `dispctl list`. Bring back a display that stayed "
+        + "disconnected with `dispctl connect <id>`, or `dispctl experimental enable <id>` if that "
+        + "fails. Replugging the cable does not reliably bring a disconnected display back."
     case .stateFailure:
-      "Durum dosyası bozuksa yedeğini alıp silin (kesik ekranların kaydı kaybolur). "
-        + "Kesik kalan ekranı `dispctl experimental enable <id>` ile açın."
+      "If the state file is corrupt, back it up and delete it (the records of disconnected "
+        + "displays are lost). Bring back a display that stayed disconnected with "
+        + "`dispctl experimental enable <id>`."
     case .unsupported:
-      "Bu özellik macOS'un private API'sine dayanır ve bu sürümde çalışmıyor olabilir. "
-        + "`dispctl list` ile ekranların durumuna bakın."
+      "This feature relies on a private macOS API that may not work on this macOS version. "
+        + "Check the display state with `dispctl list`."
     case .unknownDisplay, .notDisconnected, .lastDisplay, .builtinNotAllowed, .missingUUID:
       nil
     }

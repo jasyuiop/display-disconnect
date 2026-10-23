@@ -4,8 +4,9 @@ import DisplayCore
 import DisplayStorage
 import Foundation
 
-/// `DISPCTL_STATE_FILE` doluysa durum dosyası olarak o yol kullanılır (hata yollarını gerçek
-/// kaydı bozmadan denemek için); yoksa `~/Library/Application Support/display-disconnect/`.
+/// If `DISPCTL_STATE_FILE` is set, that path is used as the state file (to exercise error paths
+/// without touching the real record); otherwise the file lives in
+/// `~/Library/Application Support/display-disconnect/`.
 func makeService() -> DisconnectService {
   let override = ProcessInfo.processInfo.environment["DISPCTL_STATE_FILE"]
   let url =
@@ -13,7 +14,8 @@ func makeService() -> DisconnectService {
   return DisconnectService(backend: CGDisplayBackend(), store: FileStateStore(url: url))
 }
 
-/// `DisplayError`'ı stderr'e mesaj ve kurtarma önerisiyle yazar, kategoriye göre çıkış koduyla biter.
+/// Prints a `DisplayError` to stderr with its recovery suggestion and exits with the category's
+/// exit code.
 func reportingErrors(_ body: () throws -> Void) throws {
   do {
     try body()

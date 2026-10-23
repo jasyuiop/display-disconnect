@@ -25,7 +25,7 @@ import Testing
   }
 
   @Test func textForEmptyListSaysSo() {
-    #expect(DisplayListFormatter.text([]) == "Bağlı ekran yok.")
+    #expect(DisplayListFormatter.text([]) == "No displays connected.")
   }
 
   @Test func jsonRoundTrips() throws {

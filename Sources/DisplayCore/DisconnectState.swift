@@ -1,6 +1,6 @@
 import Foundation
 
-/// Kesilmeden önceki son bilinen ekran bilgisi ve kesilme zamanı.
+/// The last known display information before the disconnect, and when it happened.
 public struct DisconnectedRecord: Codable, Equatable, Sendable {
   public var display: DisplayInfo
   public var disconnectedAt: Date
@@ -20,7 +20,8 @@ public struct DisconnectState: Codable, Equatable, Sendable {
 }
 
 public protocol StateStore: Sendable {
-  /// Dosya yoksa boş durum döner; okunamayan veya bozuk durum hata fırlatır.
+  /// Returns an empty state if nothing is stored; throws if the stored state is unreadable or
+  /// corrupt.
   func load() throws -> DisconnectState
   func save(_ state: DisconnectState) throws
 }

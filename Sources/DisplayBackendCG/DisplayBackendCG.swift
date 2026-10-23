@@ -2,7 +2,8 @@ import AppKit
 import CoreGraphics
 import DisplayCore
 
-// Yalnızca public API. Private API FAZ1.3'te PrivateAPI.swift'e eklenir.
+// CoreGraphics backend: public APIs for listing and layout; the private symbols it needs are
+// confined to PrivateAPI.swift.
 public struct CGDisplayBackend: DisplayBackend {
   public init() {}
 
@@ -64,8 +65,8 @@ public struct CGDisplayBackend: DisplayBackend {
     guard result == .success else { throw Self.failure(result, "CGCompleteDisplayConfiguration") }
   }
 
-  /// Deneysel (S3, S4): private `CGSGetDisplayList`'in döndürdüğü kimlikler. Kesilmiş ekranı da
-  /// içerip içermediğini gözlemlemek için; üretim yolunda kullanılmaz.
+  /// Experimental: the IDs returned by the private `CGSGetDisplayList`, which (unlike the public
+  /// list) also includes disconnected displays. Used by `probe` to observe that.
   public func privateDisplayIDs() throws -> [UInt32] {
     let list = try PrivateAPI.getDisplayList()
     var ids = [CGDirectDisplayID](repeating: 0, count: 32)
@@ -78,7 +79,7 @@ public struct CGDisplayBackend: DisplayBackend {
   private static func failure(_ error: CGError, _ call: String = "CGGetOnlineDisplayList")
     -> DisplayError
   {
-    .backendFailure("\(call) hata kodu \(error.rawValue)")
+    .backendFailure("\(call) returned error code \(error.rawValue)")
   }
 
   private static func uuid(of id: CGDirectDisplayID) -> String {
@@ -86,8 +87,8 @@ public struct CGDisplayBackend: DisplayBackend {
     return CFUUIDCreateString(nil, uuid) as String
   }
 
-  /// NSScreen yalnızca ana iş parçacığında okunur. Başka iş parçacığından çağrılırsa ana iş
-  /// parçacığına geçilir; bu yüzden ana iş parçacığı çağıranı bekleyerek bloke olmamalıdır.
+  /// NSScreen may only be read on the main thread. When called from another thread this hops to
+  /// the main thread, so the main thread must not be blocked waiting for the caller.
   private static func screenNames() -> [CGDirectDisplayID: String] {
     if Thread.isMainThread {
       return MainActor.assumeIsolated { readScreenNames() }

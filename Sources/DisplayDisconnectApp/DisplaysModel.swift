@@ -31,7 +31,7 @@ final class DisplaysModel {
     }
   }
 
-  /// Kullanıcının "Yenile" düğmesi: görülmüş olabilecek eylem hatasını da kapatır.
+  /// The user's "Refresh" button: also dismisses an action error they may have already seen.
   func reload() {
     state.dismissActionError()
     refresh()
@@ -41,7 +41,7 @@ final class DisplaysModel {
     guard state.beginAction(on: id) else { return }
     let service = service
     Task {
-      // Arka planda: `connect` ekranın dönmesini birkaç saniyeye kadar bekleyebilir.
+      // In the background: `connect` may wait several seconds for the display to come back.
       let failure = await Task.detached(priority: .userInitiated) { () -> String? in
         do {
           switch action {
@@ -58,7 +58,7 @@ final class DisplaysModel {
     }
   }
 
-  /// Sistem ekran değişikliklerini art arda bildirir; kısa bir bekleyişle tek yenilemeye indirilir.
+  /// The system reports display changes in bursts; a short delay collapses them into one refresh.
   private func scheduleRefresh() {
     pendingRefresh?.cancel()
     pendingRefresh = Task {

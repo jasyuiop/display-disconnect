@@ -1,9 +1,9 @@
 public struct ConnectResult: Equatable, Sendable {
-  /// Ekran zaten çevrimiçiydi; yalnızca eski kayıt temizlendi.
+  /// The display was already online; only the stale record was cleared.
   public var alreadyConnected: Bool
-  /// Geri gelen ekranın konumu kayıttan farklıydı ve kayda göre düzeltildi.
+  /// The returned display's position differed from the record and was corrected to match it.
   public var originRestored: Bool
-  /// Geri gelen ekranın boyutu kayıttan farklı; değiştirilmedi, yalnızca bildirildi.
+  /// The returned display's size differs from the record; it was not changed, only reported.
   public var sizeDiffers: Bool
 
   public init(

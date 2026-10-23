@@ -8,7 +8,7 @@ public struct DisplayRow: Equatable, Identifiable, Sendable {
   public var title: String
   public var subtitle: String
   public var isDisconnected: Bool
-  /// Satırın sunduğu tek eylem; yoksa düğme çıkmaz.
+  /// The only action the row offers; without one, no button is shown.
   public var action: RowAction?
 
   public init(
@@ -22,15 +22,15 @@ public struct DisplayRow: Equatable, Identifiable, Sendable {
   }
 }
 
-/// Menubar listesinin satırlarını üretir; UI katmanı yalnızca bunları çizer.
+/// Builds the rows of the menu bar list; the UI layer only draws them.
 public enum DisplayMenuPresenter {
   public static func rows(_ displays: [DisplayInfo]) -> [DisplayRow] {
     let connectedCount = displays.filter { $0.state == .connected }.count
     return displays.map { display in
       var parts = ["\(display.width)×\(display.height)"]
-      if display.isMain { parts.append("ana ekran") }
-      if display.isBuiltin { parts.append("dahili") }
-      if display.state == .disconnected { parts.append("bağlantısı kesik") }
+      if display.isMain { parts.append("main display") }
+      if display.isBuiltin { parts.append("built-in") }
+      if display.state == .disconnected { parts.append("disconnected") }
       return DisplayRow(
         id: display.id,
         title: display.name,
@@ -40,7 +40,8 @@ public enum DisplayMenuPresenter {
     }
   }
 
-  /// Servis aynı kuralları zaten uygular; burada yalnızca olmayacak eylem sunulmaz.
+  /// The service enforces the same rules anyway; this only avoids offering an action that
+  /// would be refused.
   private static func action(for display: DisplayInfo, connectedCount: Int) -> RowAction? {
     if display.state == .disconnected { return .connect }
     if display.isBuiltin || connectedCount < 2 { return nil }

@@ -1,8 +1,8 @@
 import CoreGraphics
 
-/// Ekran yapılandırması değişince (takma/çıkarma, kesme/bağlama, çözünürlük) `handler`'ı çağırır.
-/// Sistem değişikliği iki aşamada bildirir; yalnızca tamamlanmış olanlar iletilir. `handler`
-/// bildirimin geldiği iş parçacığında çalışır ve hızlı dönmelidir.
+/// Calls `handler` when the display configuration changes (plug/unplug, disconnect/connect,
+/// resolution). The system reports a change in two phases; only completed ones are forwarded.
+/// `handler` runs on the thread that delivers the notification and should return quickly.
 public final class DisplayChangeObserver: @unchecked Sendable {
   fileprivate let handler: @Sendable () -> Void
 

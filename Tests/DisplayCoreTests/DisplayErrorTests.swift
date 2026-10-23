@@ -25,9 +25,9 @@ import Testing
   }
 
   @Test func suggestionDoesNotRecommendReplugging() throws {
-    // Kablo çekip takmak kesik ekranı geri getirmedi (FAZ1.3, S-kurtarma gözlemi).
+    // Replugging the cable did not bring a disconnected display back in hardware testing.
     let backend = try #require(DisplayError.backendFailure("x").recoverySuggestion)
-    #expect(backend.contains("geri getirmez"))
+    #expect(backend.contains("does not reliably bring"))
   }
 
   @Test func refusalsNeedNoSuggestion() {

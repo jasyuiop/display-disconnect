@@ -21,7 +21,7 @@ public struct DisconnectService: Sendable {
     self.sleep = sleep
   }
 
-  /// Çevrimiçi ekranlar ile kayıtlı ama çevrimiçi olmayan (kesilmiş) ekranlar. Salt okunur.
+  /// Online displays plus recorded displays that are no longer online (disconnected). Read-only.
   public func list() throws -> [DisplayInfo] {
     let online = try onlineDisplays()
     let onlineUUIDs = Set(online.map(\.uuid))
@@ -35,8 +35,8 @@ public struct DisconnectService: Sendable {
     return (online + disconnected).sorted { $0.id < $1.id }
   }
 
-  /// Harici ekranın görüntüsünü keser ve geri bağlanabilmesi için kaydını yazar.
-  /// Önce kayıt yazılır; kesme başarısız olursa kayıt geri alınır.
+  /// Cuts the video signal of an external display and records it so it can be reconnected.
+  /// The record is written first; if the disconnect fails, the record is rolled back.
   public func disconnect(_ id: UInt32) throws {
     let target = try validatedTarget(id)
     guard !target.uuid.isEmpty else { throw DisplayError.missingUUID(id) }
@@ -50,15 +50,16 @@ public struct DisconnectService: Sendable {
     do {
       try call { try backend.setEnabled(id: id, enabled: false) }
     } catch {
-      // Asıl hata `error`; geri alma da başarısız olursa kayıt kalır, ama bir sonraki
-      // `list` çevrimiçi ekranı UUID ile eşleştirip kaydı yok sayar.
+      // `error` is the real failure. If the rollback fails too, the record stays, but the next
+      // `list` matches the online display by UUID and ignores the record.
       try? store.save(previous)
       throw error
     }
   }
 
-  /// Kesilmiş ekranı geri bağlar: kaydı UUID ile çözer, ekranın gerçekten döndüğünü doğrular,
-  /// konum kayıttan farklıysa düzeltir ve kaydı siler. Ekran dönmezse kayıt korunur.
+  /// Reconnects a disconnected display: resolves the record by UUID, verifies that the display
+  /// really came back, fixes its position if it differs from the record, and deletes the record.
+  /// If the display does not come back, the record is kept.
   @discardableResult
   public func connect(_ id: UInt32) throws -> ConnectResult {
     let state = try loadState()
@@ -74,8 +75,8 @@ public struct DisconnectService: Sendable {
     try call { try backend.setEnabled(id: currentID(of: recorded), enabled: true) }
     guard let appeared = try waitForDisplay(uuid: recorded.uuid) else {
       throw DisplayError.backendFailure(
-        "Geri bağlama komutu verildi ama ekran birkaç saniye içinde görünmedi; kayıt korundu. "
-          + "`dispctl list` ile bakın.")
+        "The reconnect request was sent but the display did not appear within a few seconds; "
+          + "the record was kept. Check `dispctl list`.")
     }
 
     var result = ConnectResult()
@@ -88,13 +89,14 @@ public struct DisconnectService: Sendable {
     return result
   }
 
-  /// Deneysel, durumsuz kesme (`dispctl experimental disable`). Aynı güvenlik denetimleri.
+  /// Experimental, stateless disconnect (`dispctl experimental disable`). Same safety checks.
   public func disable(_ id: UInt32) throws {
     _ = try validatedTarget(id)
     try call { try backend.setEnabled(id: id, enabled: false) }
   }
 
-  /// Kesilmiş ekranı geri ekler. Kesilmiş ekran çevrimiçi listede olmadığı için varlığı denetlenmez.
+  /// Re-adds a disconnected display. Its existence is not checked, since a disconnected display
+  /// is not in the online list.
   public func enable(_ id: UInt32) throws {
     try call { try backend.setEnabled(id: id, enabled: true) }
   }
@@ -109,8 +111,9 @@ public struct DisconnectService: Sendable {
     return target
   }
 
-  /// Kayıttaki UUID'nin şu anki kimliği. Private liste yoksa kayıtlı kimlikle devam edilir;
-  /// asıl işlem (`setEnabled`) kendi hatasını bildirir. UUID eşleşmeyen kimliklere dokunulmaz.
+  /// The current ID for the recorded UUID. If the private list is unavailable, the recorded ID is
+  /// used; the real operation (`setEnabled`) reports its own error. IDs whose UUID does not
+  /// match are never touched.
   private func currentID(of recorded: DisplayInfo) -> UInt32 {
     guard !recorded.uuid.isEmpty, let known = try? backend.knownDisplays() else {
       return recorded.id
@@ -139,7 +142,8 @@ public struct DisconnectService: Sendable {
     do {
       try saveState(updated)
     } catch DisplayError.stateFailure(let reason) where afterConnect {
-      throw DisplayError.stateFailure("ekran geri bağlandı ama kayıt temizlenemedi: \(reason)")
+      throw DisplayError.stateFailure(
+        "the display was reconnected but its record could not be cleared: \(reason)")
     }
   }
 

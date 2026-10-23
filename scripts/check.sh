@@ -1,51 +1,62 @@
 #!/usr/bin/env bash
-# Tek kalite kapısı: sen de Claude da aynı komutu çalıştırırsınız.
-# Bir adım başarısız olursa script durur ve sıfır olmayan kodla çıkar.
+# The single quality gate: you and Claude run the same command.
+# If a step fails, the script stops and exits non-zero.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 step() { printf '\n==> %s\n' "$*"; }
 
-# Yalnızca Command Line Tools ile derlerken swift-testing makro plugin'i derleyiciye
-# kendiliğinden verilmiyor ("plugin for module 'TestingMacros' not found"); varsa elle ver.
+# With only the Command Line Tools installed, the swift-testing macro plugin is not passed to the
+# compiler automatically ("plugin for module 'TestingMacros' not found"); pass it explicitly.
 testing_plugins="$(xcode-select -p)/usr/lib/swift/host/plugins/testing"
 swiftc_extra=()
 if [ -d "$testing_plugins" ]; then
   swiftc_extra=(-Xswiftc -plugin-path -Xswiftc "$testing_plugins")
 fi
 
-step "Format"
-swift format lint --strict --recursive Sources Tests Package.swift
-
-step "Katman kuralı (DisplayCore, CoreGraphics import edemez)"
-if grep -rnE "import (CoreGraphics|AppKit|SwiftUI)" Sources/DisplayCore; then
-  echo "DisplayCore platform çerçevesi import ediyor." >&2
+step "Language check (English only)"
+# Turkish letters as UTF-8 byte sequences, so this file does not match itself.
+turkish_letters=$'\xc3\xa7|\xc3\x87|\xc4\x9f|\xc4\x9e|\xc4\xb1|\xc4\xb0|\xc3\xb6|\xc3\x96|\xc5\x9f|\xc5\x9e|\xc3\xbc|\xc3\x9c'
+if LC_ALL=C grep -rnE "$turkish_letters" Sources Tests scripts; then
+  echo "Turkish characters found above; user-facing text, comments and scripts must be English." >&2
   exit 1
 fi
 
-step "Derleme (uyarılar hata)"
+step "Format"
+swift format lint --strict --recursive Sources Tests Package.swift
+
+step "Layer rule (DisplayCore must not import CoreGraphics, AppKit or SwiftUI)"
+if grep -rnE "import (CoreGraphics|AppKit|SwiftUI)" Sources/DisplayCore; then
+  echo "DisplayCore imports a platform framework." >&2
+  exit 1
+fi
+
+step "Build (warnings are errors)"
 swift build -Xswiftc -warnings-as-errors ${swiftc_extra[@]+"${swiftc_extra[@]}"}
 
 step "Test"
 swift test ${swiftc_extra[@]+"${swiftc_extra[@]}"}
 
-step "App bundle (LSUIElement, imza)"
+step "App bundle (LSUIElement, signature)"
 bundle_dir="$(mktemp -d)"
 trap 'rm -rf "$bundle_dir"' EXIT
 ./scripts/bundle-app.sh --out "$bundle_dir" >/dev/null
 app="$bundle_dir/DisplayDisconnect.app"
 test -x "$app/Contents/MacOS/DisplayDisconnectApp"
 if [ "$(plutil -extract LSUIElement raw -o - "$app/Contents/Info.plist")" != "true" ]; then
-  echo "Info.plist: LSUIElement true değil (Dock ikonu çıkar)." >&2
+  echo "Info.plist: LSUIElement is not true (a Dock icon would appear)." >&2
   exit 1
 fi
 codesign --verify --deep --strict "$app"
 
-step "Yer tutucu kontrolü"
-if grep -rn "{{" CLAUDE.md docs/ >/dev/null 2>&1; then
-  echo "Doldurulmamış {{...}} yer tutucuları var:" >&2
-  grep -rn "{{" CLAUDE.md docs/ >&2
-  exit 1
+# Internal notes are not part of the published repository; check them only where they exist.
+if [ -f CLAUDE.md ] || [ -d docs ]; then
+  step "Placeholder check (internal notes)"
+  if grep -rn "{{" CLAUDE.md docs/ >/dev/null 2>&1; then
+    echo "Unfilled {{...}} placeholders found:" >&2
+    grep -rn "{{" CLAUDE.md docs/ >&2
+    exit 1
+  fi
 fi
 
-printf '\nTüm kontroller geçti.\n'
+printf '\nAll checks passed.\n'

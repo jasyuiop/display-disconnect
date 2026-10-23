@@ -1,7 +1,8 @@
 import DisplayCore
 import Foundation
 
-/// Durumu bir JSON dosyasında tutar. Dosya yoksa boş durum; bozuk veya yazılamayan dosya hata.
+/// Keeps the state in a JSON file. A missing file is an empty state; a corrupt or unwritable
+/// file is an error.
 public struct FileStateStore: StateStore {
   public let url: URL
 
@@ -23,7 +24,7 @@ public struct FileStateStore: StateStore {
       decoder.dateDecodingStrategy = .iso8601
       return try decoder.decode(DisconnectState.self, from: Data(contentsOf: url))
     } catch {
-      throw DisplayError.stateFailure("\(url.path) okunamadı veya bozuk: \(error)")
+      throw DisplayError.stateFailure("\(url.path) could not be read or is corrupt: \(error)")
     }
   }
 
@@ -36,7 +37,7 @@ public struct FileStateStore: StateStore {
         at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
       try encoder.encode(state).write(to: url, options: .atomic)
     } catch {
-      throw DisplayError.stateFailure("\(url.path) yazılamadı: \(error)")
+      throw DisplayError.stateFailure("\(url.path) could not be written: \(error)")
     }
   }
 }

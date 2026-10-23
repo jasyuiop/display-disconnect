@@ -7,11 +7,11 @@ import Testing
   @Test func missingSymbolThrowsUnsupportedInsteadOfCrashing() {
     do {
       _ = try PrivateAPI.symbol("DispctlOlmayanSembol", as: PrivateAPI.GetDisplayList.self)
-      Issue.record("Olmayan sembol için hata bekleniyordu")
+      Issue.record("Expected an error for a symbol that does not exist")
     } catch DisplayError.unsupported(let reason) {
       #expect(reason.contains("DispctlOlmayanSembol"))
     } catch {
-      Issue.record("Beklenmeyen hata türü: \(error)")
+      Issue.record("Unexpected error type: \(error)")
     }
   }
 }

@@ -25,7 +25,7 @@ struct FakeBackend: DisplayBackend {
   var setEnabledFailure: (any Error)?
   var known: [KnownDisplay]
   var knownFailure: (any Error)?
-  /// `setEnabled(id, true)` çağrılınca çevrimiçi olacak ekranlar (kimlikleri eşleşirse).
+  /// Displays that come online when `setEnabled(id, true)` is called (if their IDs match).
   var appearsOnEnable: [DisplayInfo]
   let recorder = CallRecorder()
   private let online: OnlineBox
@@ -93,7 +93,7 @@ struct StubError: Error {}
 let fixedDate = Date(timeIntervalSince1970: 1_700_000_000)
 
 extension DisconnectService {
-  /// Durumla ilgilenmeyen testler için boş, bellek içi depo.
+  /// An empty in-memory store, for tests that do not care about state.
   init(backend: any DisplayBackend) {
     self.init(backend: backend, store: FakeStore(), now: { fixedDate }, sleep: { _ in })
   }

@@ -2,14 +2,15 @@ import CoreGraphics
 import Darwin
 import DisplayCore
 
-/// Projedeki tüm private semboller yalnızca burada, çalışma anında `dlsym` ile çözülür.
-/// Sembol yoksa çökme yerine `DisplayError.unsupported` döner.
+/// Every private symbol in the project lives here and is resolved at run time with `dlsym`.
+/// If a symbol is missing, `DisplayError.unsupported` is thrown instead of crashing.
 enum PrivateAPI {
-  /// İmza birden çok açık kaynak projeyle tutarlı (bkz. docs/ARCHITECTURE.md).
+  /// The signature agrees with several independent open-source projects.
   typealias ConfigureDisplayEnabled =
     @convention(c) (CGDisplayConfigRef?, CGDirectDisplayID, Bool) -> CGError
 
-  /// İmza doğrulanmadı (S3): yalnızca bir README'de geçiyor; CGGetOnlineDisplayList'e benzetildi.
+  /// The signature is inferred from `CGGetOnlineDisplayList`; it is only documented in one
+  /// project's README, but it behaved as expected in testing.
   typealias GetDisplayList =
     @convention(c) (UInt32, UnsafeMutablePointer<CGDirectDisplayID>?, UnsafeMutablePointer<UInt32>?)
     -> CGError
@@ -25,7 +26,7 @@ enum PrivateAPI {
   static func symbol<T>(_ name: String, as type: T.Type) throws -> T {
     let rtldDefault = UnsafeMutableRawPointer(bitPattern: -2)
     guard let address = dlsym(rtldDefault, name) else {
-      throw DisplayError.unsupported("\(name) sembolü bu macOS sürümünde bulunamadı")
+      throw DisplayError.unsupported("the symbol \(name) was not found on this macOS version")
     }
     return unsafeBitCast(address, to: type)
   }

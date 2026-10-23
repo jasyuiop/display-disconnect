@@ -2,7 +2,7 @@ import Foundation
 
 public enum DisplayListFormatter {
   public static func text(_ displays: [DisplayInfo]) -> String {
-    guard !displays.isEmpty else { return "Bağlı ekran yok." }
+    guard !displays.isEmpty else { return "No displays connected." }
     return displays.map { display in
       var line = "\(display.id)  \(display.name)  \(display.uuid)"
       line += "  \(display.width)x\(display.height)+\(display.x)+\(display.y)"

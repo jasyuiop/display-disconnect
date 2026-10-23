@@ -1,8 +1,8 @@
-/// Menubar penceresinin durumu. Liste hatası ve eylem hatası ayrı tutulur: başarılı bir liste
-/// yenilemesi, kullanıcının henüz görmediği eylem hatasını silmemelidir.
+/// The state of the menu bar window. List errors and action errors are kept apart: a successful
+/// list refresh must not wipe an action error the user has not seen yet.
 public struct MenuState: Equatable, Sendable {
   public private(set) var rows: [DisplayRow] = []
-  /// Eylemi süren ekranın kimliği; bu sırada başka eylem başlatılmaz.
+  /// ID of the display an action is running for; no other action starts meanwhile.
   public private(set) var busyID: UInt32?
   private var listError: String?
   private var actionError: String?
@@ -21,7 +21,7 @@ public struct MenuState: Equatable, Sendable {
     listError = message
   }
 
-  /// Meşgulse `false` döner ve hiçbir şeyi değiştirmez.
+  /// Returns `false` and changes nothing if an action is already running.
   public mutating func beginAction(on id: UInt32) -> Bool {
     guard busyID == nil else { return false }
     busyID = id

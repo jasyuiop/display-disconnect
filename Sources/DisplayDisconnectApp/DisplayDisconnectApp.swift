@@ -2,8 +2,8 @@ import SwiftUI
 
 @main
 struct DisplayDisconnectApp: App {
-  // `@State` değil: Command Line Tools'ta SwiftUIMacros plugin'i yok. @Observable model bir `let`
-  // olarak tutulur; SwiftUI okumalarını yine izler.
+  // Not `@State`: the Command Line Tools ship no SwiftUIMacros plugin. The @Observable model is
+  // kept as a plain `let`; SwiftUI still tracks the reads.
   private let model = DisplaysModel()
 
   var body: some Scene {

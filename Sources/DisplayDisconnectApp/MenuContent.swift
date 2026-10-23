@@ -8,7 +8,7 @@ struct MenuContent: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
       if model.rows.isEmpty && model.errorMessage == nil {
-        Text("Bağlı ekran yok.")
+        Text("No displays connected.")
       }
       ForEach(model.rows) { row in
         HStack {
@@ -30,9 +30,9 @@ struct MenuContent: View {
       }
       Divider()
       HStack {
-        Button("Yenile") { model.reload() }
+        Button("Refresh") { model.reload() }
         Spacer()
-        Button("Çık") { NSApplication.shared.terminate(nil) }
+        Button("Quit") { NSApplication.shared.terminate(nil) }
       }
     }
     .padding(12)
@@ -42,8 +42,8 @@ struct MenuContent: View {
 
   private func label(for action: RowAction) -> String {
     switch action {
-    case .disconnect: "Bağlantıyı kes"
-    case .connect: "Bağla"
+    case .disconnect: "Disconnect"
+    case .connect: "Connect"
     }
   }
 }
