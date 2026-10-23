@@ -18,6 +18,12 @@ import Testing
     #expect(DisplayListFormatter.text([.stub(id: 1, isBuiltin: true)]).contains("builtin"))
   }
 
+  @Test func textMarksDisconnected() {
+    #expect(
+      DisplayListFormatter.text([.stub(id: 3, state: .disconnected)]).contains("disconnected"))
+    #expect(!DisplayListFormatter.text([.stub(id: 3)]).contains("disconnected"))
+  }
+
   @Test func textForEmptyListSaysSo() {
     #expect(DisplayListFormatter.text([]) == "Bağlı ekran yok.")
   }

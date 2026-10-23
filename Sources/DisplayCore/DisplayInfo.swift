@@ -1,3 +1,8 @@
+public enum DisplayState: String, Codable, Equatable, Sendable {
+  case connected
+  case disconnected
+}
+
 public struct DisplayInfo: Codable, Equatable, Sendable {
   public var id: UInt32
   public var uuid: String
@@ -8,10 +13,11 @@ public struct DisplayInfo: Codable, Equatable, Sendable {
   public var y: Int
   public var width: Int
   public var height: Int
+  public var state: DisplayState
 
   public init(
     id: UInt32, uuid: String, name: String, isBuiltin: Bool, isMain: Bool,
-    x: Int, y: Int, width: Int, height: Int
+    x: Int, y: Int, width: Int, height: Int, state: DisplayState = .connected
   ) {
     self.id = id
     self.uuid = uuid
@@ -22,5 +28,6 @@ public struct DisplayInfo: Codable, Equatable, Sendable {
     self.y = y
     self.width = width
     self.height = height
+    self.state = state
   }
 }

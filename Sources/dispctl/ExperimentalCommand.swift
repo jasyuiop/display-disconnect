@@ -27,7 +27,7 @@ struct ExperimentalCommand: ParsableCommand {
     }
 
     func run() throws {
-      let service = DisconnectService(backend: CGDisplayBackend())
+      let service = makeService()
       try service.disable(id)
       print("Ekran \(id) devre dışı bırakıldı.")
       guard let revertAfter else { return }
@@ -47,7 +47,7 @@ struct ExperimentalCommand: ParsableCommand {
     var id: UInt32
 
     func run() throws {
-      try DisconnectService(backend: CGDisplayBackend()).enable(id)
+      try makeService().enable(id)
       print("Ekran \(id) geri açıldı.")
     }
   }

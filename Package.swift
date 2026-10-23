@@ -13,14 +13,17 @@ let package = Package(
   targets: [
     .target(name: "DisplayCore"),
     .target(name: "DisplayBackendCG", dependencies: ["DisplayCore"]),
+    .target(name: "DisplayStorage", dependencies: ["DisplayCore"]),
     .executableTarget(
       name: "dispctl",
       dependencies: [
         "DisplayCore",
         "DisplayBackendCG",
+        "DisplayStorage",
         .product(name: "ArgumentParser", package: "swift-argument-parser"),
       ]
     ),
     .testTarget(name: "DisplayCoreTests", dependencies: ["DisplayCore"]),
+    .testTarget(name: "DisplayStorageTests", dependencies: ["DisplayStorage", "DisplayCore"]),
   ]
 )

@@ -1,5 +1,4 @@
 import ArgumentParser
-import DisplayBackendCG
 import DisplayCore
 
 struct ListCommand: ParsableCommand {
@@ -12,7 +11,7 @@ struct ListCommand: ParsableCommand {
   var json = false
 
   func run() throws {
-    let displays = try DisconnectService(backend: CGDisplayBackend()).list()
+    let displays = try makeService().list()
     print(json ? try DisplayListFormatter.json(displays) : DisplayListFormatter.text(displays))
   }
 }

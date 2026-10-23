@@ -8,6 +8,7 @@ public enum DisplayListFormatter {
       line += "  \(display.width)x\(display.height)+\(display.x)+\(display.y)"
       if display.isMain { line += "  main" }
       if display.isBuiltin { line += "  builtin" }
+      if display.state == .disconnected { line += "  disconnected" }
       return line
     }.joined(separator: "\n")
   }
