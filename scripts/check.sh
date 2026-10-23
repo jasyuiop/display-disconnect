@@ -47,6 +47,12 @@ if [ "$(plutil -extract LSUIElement raw -o - "$app/Contents/Info.plist")" != "tr
   echo "Info.plist: LSUIElement is not true (a Dock icon would appear)." >&2
   exit 1
 fi
+expected_id="io.github.jasyuiop.display-disconnect"
+actual_id="$(plutil -extract CFBundleIdentifier raw -o - "$app/Contents/Info.plist")"
+if [ "$actual_id" != "$expected_id" ]; then
+  echo "Info.plist: CFBundleIdentifier is $actual_id, expected $expected_id." >&2
+  exit 1
+fi
 codesign --verify --deep --strict "$app"
 
 # Internal notes are not part of the published repository; check them only where they exist.

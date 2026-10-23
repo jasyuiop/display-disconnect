@@ -42,7 +42,7 @@ cat > "$app/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleIdentifier</key><string>io.github.display-disconnect.app</string>
+  <key>CFBundleIdentifier</key><string>io.github.jasyuiop.display-disconnect</string>
   <key>CFBundleName</key><string>DisplayDisconnect</string>
   <key>CFBundleDisplayName</key><string>Display Disconnect</string>
   <key>CFBundleExecutable</key><string>DisplayDisconnectApp</string>
