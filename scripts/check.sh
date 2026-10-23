@@ -55,6 +55,25 @@ if [ "$actual_id" != "$expected_id" ]; then
 fi
 codesign --verify --deep --strict "$app"
 
+step "Release packaging (zip, tarball, checksums)"
+dist_dir="$(mktemp -d)"
+trap 'rm -rf "$bundle_dir" "$dist_dir"' EXIT
+version="$(sed -n 's/.*static let version = "\(.*\)".*/\1/p' Sources/DisplayCore/AppInfo.swift)"
+./scripts/package-release.sh --out "$dist_dir" --configuration debug >/dev/null
+app_zip="$dist_dir/DisplayDisconnect-$version-arm64.zip"
+cli_tar="$dist_dir/dispctl-$version-arm64.tar.gz"
+zip_listing="$(unzip -l "$app_zip")"
+tar_listing="$(tar -tzf "$cli_tar")"
+case "$zip_listing" in
+  *"DisplayDisconnect.app/Contents/Info.plist"*) ;;
+  *) echo "Release zip lacks the app's Info.plist." >&2; exit 1 ;;
+esac
+if [ "$tar_listing" != "dispctl" ]; then
+  echo "Release tarball must contain exactly dispctl, found: $tar_listing" >&2
+  exit 1
+fi
+(cd "$dist_dir" && shasum -a 256 -c SHA256SUMS >/dev/null)
+
 # Internal notes are not part of the published repository; check them only where they exist.
 if [ -f CLAUDE.md ] || [ -d docs ]; then
   step "Placeholder check (internal notes)"

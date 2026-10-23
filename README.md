@@ -23,7 +23,24 @@ It is an open-source take on BetterDisplay Pro's "Disconnect Display", for Apple
 
 ## Install
 
-Build from source:
+### Download
+
+Grab the latest build from the [Releases](https://github.com/jasyuiop/display-disconnect/releases) page:
+
+- `DisplayDisconnect-<version>-arm64.zip`: the menu bar app. Unzip it and move `DisplayDisconnect.app` to `/Applications`.
+- `dispctl-<version>-arm64.tar.gz`: the CLI. Extract it and put `dispctl` somewhere on your `PATH`.
+- `SHA256SUMS`: verify with `shasum -a 256 -c SHA256SUMS`.
+
+The builds are ad-hoc signed, not notarized (there is no Apple Developer ID behind this project), so macOS blocks them on first launch. After checking the checksum, remove the quarantine flag:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/DisplayDisconnect.app
+xattr -d com.apple.quarantine /path/to/dispctl
+```
+
+Or build from source, which never gets a quarantine flag.
+
+### Build from source
 
 ```sh
 git clone https://github.com/jasyuiop/display-disconnect.git
@@ -38,8 +55,6 @@ To build the menu bar app bundle:
 scripts/bundle-app.sh --configuration release
 open .build/bundle/DisplayDisconnect.app
 ```
-
-The app is ad-hoc signed, not notarized. Building it yourself avoids the Gatekeeper quarantine that a downloaded copy would get.
 
 ## Usage
 
